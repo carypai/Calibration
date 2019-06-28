@@ -1,0 +1,55 @@
+models:
+  - name: ssd_mobilenet_v1_coco
+
+    # list of launchers for your topology.
+    launchers:
+        # launcher framework (e.g. caffe, dlsdk)
+      - framework: dlsdk
+        # device for infer (e.g. for dlsdk cpu, gpu, hetero:cpu, gpu ...)
+        device: CPU
+        # topology IR (*.prototxt for caffe, *.xml for InferenceEngine, etc)
+        # path to topology is prefixed with directory, specified in "-m/--models" option
+        #caffe_model: "C:\\Program Files (x86)\\IntelSWTools\\openvino_2019.1.148\\deployment_tools\\tools\\model_downloader\\object_detection\\common\\ssd\\512\\caffe\\models\\VGGNet\\VOC0712Plus\\SSD_512x512\\deploy.prototxt"
+        #caffe_weights: "C:\\Program Files (x86)\\IntelSWTools\\openvino_2019.1.148\\deployment_tools\\tools\\model_downloader\\object_detection\\common\\ssd\\512\\caffe\\models\\VGGNet\\VOC0712Plus\\SSD_512x512\\VGG_VOC0712Plus_SSD_512x512_iter_240000.caffemodel"
+        model: "C:\\Program Files (x86)\\IntelSWTools\\openvino_2019.1.148\\deployment_tools\\tools\\model_downloader\\object_detection\\common\\ssd\\512\\caffe\\models\\VGGNet\\VOC0712Plus\\SSD_512x512\\VGG_VOC0712Plus_SSD_512x512_iter_240000.xml"
+        weights: "C:\\Program Files (x86)\\IntelSWTools\\openvino_2019.1.148\\deployment_tools\\tools\\model_downloader\\object_detection\\common\\ssd\\512\\caffe\\models\\VGGNet\\VOC0712Plus\\SSD_512x512\\VGG_VOC0712Plus_SSD_512x512_iter_240000.bin"
+        # launcher returns raw result, so it should be converted
+        # to an appropriate representation with adapter
+        adapter: ssd
+        cpu_extensions: "C:\\Program Files (x86)\\IntelSWTools\\openvino_2019.1.148\\deployment_tools\\inference_engine\\bin\\intel64\\Release\\cpu_extension_avx2.dll"
+        mo_params:
+            data_type: FP32
+            input_shape: [1,3,512,512]
+            mean_values: [104.0,117.0,123.0]
+
+
+    # metrics, preprocessing and postprocessing are typically dataset specific, so dataset field
+    # specifies data and all other steps required to validate topology
+    # there is typically definitions file, which contains options for common datasets and which is merged
+    # during evaluation, but since "sample_dataset" is not used anywhere else, this config contains full definition
+    datasets:
+      # uniquely distinguishable name for dataset
+      # note that all other steps are specific for this dataset only
+      # if you need to test topology on multiple datasets, you need to specify
+      # every step explicitly for each dataset
+      - name: voc07
+        data_source: "C:\\Users\\cpai\\Documents\\DPD\\OpenVINO\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages"
+        # parameters for annotation conversion to a common annotation representation format.
+        annotation_conversion:
+          converter: voc07
+          image_set_file: "C:\\Users\\cpai\\Documents\\DPD\\OpenVINO\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\ssd_test.txt"
+          annotations_dir: "C:\\Users\\cpai\\Documents\\DPD\\OpenVINO\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\Annotations"
+          images_dir: "C:\\Users\\cpai\\Documents\\DPD\\OpenVINO\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages"
+        preprocessing:
+          - type: resize
+            size: 512
+          - type: normalization
+            mean: 104, 117, 123
+        postprocessing:
+          - type: resize_prediction_boxes
+        # list of metrics, calculated on dataset
+        metrics:
+          - type: map
+            integral: 11point
+            ignore_difficult: True
+            presenter: print_scalar
